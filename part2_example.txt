@@ -1,0 +1,28 @@
+187  A      
+195  A B    
+199  A B C  
+218    B C D
+221  E   C D
+222  E F   D
+219  E F G  
+225    F G H
+226      G H
+227        H
+
+A: 581 (NA - Start)
+B: 612 (increased)
+C: 638 (increased)
+D: 661 (increased)
+E: 662 (increased)
+F: 666 (increased)
+G: 670 (increased)
+H: 678 (increased)
+
+Window Size = 3
+
+O(n)
+[[221,222,219],225,226,227]
+
+// A Window: 581  
+// B Window: 612 = 581 - 187 + 218
+// C Window: 638 = 195 + 221

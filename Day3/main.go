@@ -40,18 +40,6 @@ type Track struct {
 
 var inputs []int
 
-func activeCount(activeItems []Track) int {
-	var activeItemsCount = 0
-	for i := 0; i < len(activeItems); i++ {
-		if activeItems[i].isActive {
-			activeItemsCount++
-		}
-	}
-
-	// If this returns 2 - we have to break the tie
-	return activeItemsCount
-}
-
 func main() {
 
 	file, err := os.Open("C:\\Users\\kzism\\source\\repos\\AdventOfCode\\Day3\\input.txt")
@@ -107,22 +95,21 @@ func main() {
 
 	//pt2
 
-	//var trie *Node
 	numbers := []Node{}
 	setup := []Track{}
-	//var binaryLoc = [5]int{}
+	var oxygenRating []int
+	var co2ScrubberRating []int
+	var lifeSupportRating int64
 
 	// 00100
-	setupArrays := strings.Split(test, "\n")
-	for i := 0; i < 50; i++ {
-		var binaryTest = [5]int{}
+	setupArrays := strings.Split(lines, "\n")
+	for i := 0; i < len(lines); i++ {
+		var binaryTest = [12]int{}
 
 		var onesCount = 0
 		var zeroesCount = 0
-		if i < 12 {
+		if i < 1000 {
 			for n, r := range setupArrays[i] {
-				c := string(r)
-				fmt.Println(c)
 				// I don't quite understand how this works but it does from rune ---> int
 				binaryTest[n] = int(r - '0')
 				if binaryTest[n] == 1 {
@@ -130,8 +117,8 @@ func main() {
 				} else {
 					zeroesCount++
 				}
-
 			}
+
 			s := Track{inputs: binaryTest[:], ZeroesCount: zeroesCount, OnesCount: onesCount, count: i, isActive: true}
 			onesCount = 0
 			zeroesCount = 0
@@ -139,7 +126,7 @@ func main() {
 		}
 	}
 
-	report := strings.Split(test, "\n")
+	report := strings.Split(lines, "\n")
 	for i := 0; i < len(report[0]); i++ {
 		var zeroes, ones int
 		for _, b := range report {
@@ -170,12 +157,155 @@ func main() {
 		numbers[i].count = i
 	}
 
-	for nodeIndex := 0; nodeIndex <= 4; nodeIndex++ {
-		//fmt.Println(numbers[i])
-		for x := 0; x <= 11; x++ {
-			if setup[x].inputs[nodeIndex] != numbers[nodeIndex].mcb && setup[x].isActive == true {
+	// Oxygen Scrubber Rating - Most Common ---> 1
+	var nodeMcb = 0
+	for nodeIndex := 0; nodeIndex <= 11; nodeIndex++ {
+		nodeMcb = getMostCommonBit(setup, nodeIndex)
+		for x := 0; x <= 999; x++ {
+			if setup[x].inputs[nodeIndex] != nodeMcb && setup[x].isActive == true {
 				setup[x].isActive = false
 			}
 		}
+		nodeMcb = getMostCommonBit(setup, nodeIndex)
+
+		// We found our oxygen rating
+		if remainingMcb(setup) {
+			oxygenRating = outputOxygenRating(setup)
+			fmt.Printf("%v", oxygenRating)
+		}
 	}
+
+	// Reset all items to active
+	resetActive(setup)
+
+	var nodeLcb = 0
+	for nodeIndex := 0; nodeIndex <= 11; nodeIndex++ {
+		nodeLcb = getLeastCommonBit(setup, nodeIndex)
+		for x := 0; x <= 999; x++ {
+			if setup[x].inputs[nodeIndex] != nodeLcb && setup[x].isActive == true {
+				setup[x].isActive = false
+			}
+		}
+		nodeLcb = getLeastCommonBit(setup, nodeIndex)
+
+		// We found our oxygen rating
+		if remainingLcb(setup) {
+			co2ScrubberRating = outputCo2ScrubberRating(setup)
+			fmt.Printf("%v", co2ScrubberRating)
+		}
+	}
+
+	lifeSupportRating = join(co2ScrubberRating) * join(oxygenRating)
+
+	fmt.Println("Part 2 Answer: " + strconv.Itoa(int(lifeSupportRating)))
+}
+
+func getMostCommonBit(items []Track, bitPos int) int {
+
+	var zeroesCount = 0
+	var onesCount = 0
+	for i := 0; i < len(items); i++ {
+		if items[i].inputs[bitPos] == 1 && items[i].isActive {
+			onesCount++
+		} else if items[i].inputs[bitPos] == 0 && items[i].isActive {
+			zeroesCount++
+		}
+	}
+	if zeroesCount > onesCount {
+		return 0
+	} else if zeroesCount < onesCount {
+		return 1
+	} else {
+		// Tie in number of bits - choose 1
+		return 1
+	}
+}
+
+func getLeastCommonBit(items []Track, bitPos int) int {
+	var zeroesCount = 0
+	var onesCount = 0
+
+	for i := 0; i < len(items); i++ {
+		if items[i].inputs[bitPos] == 1 && items[i].isActive {
+			onesCount++
+		} else if items[i].inputs[bitPos] == 0 && items[i].isActive {
+			zeroesCount++
+		}
+	}
+	if zeroesCount < onesCount {
+		return 0
+	} else if zeroesCount > onesCount {
+		return 1
+	} else {
+		// Tie in number of bits - choose 0
+		return 0
+	}
+}
+
+func remainingMcb(items []Track) bool {
+	var count = len(items)
+	for i := 0; i < len(items); i++ {
+		if !items[i].isActive {
+			count--
+		}
+	}
+
+	if count == 1 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func remainingLcb(items []Track) bool {
+	var count = len(items)
+	for i := 0; i < len(items); i++ {
+		if !items[i].isActive {
+			count--
+		}
+	}
+
+	if count == 1 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func outputOxygenRating(items []Track) []int {
+	var retVal []int
+	for i := 0; i < len(items); i++ {
+		if items[i].isActive {
+			retVal = items[i].inputs
+		}
+	}
+	return retVal
+}
+
+func outputCo2ScrubberRating(items []Track) []int {
+	var retVal []int
+	for i := 0; i < len(items); i++ {
+		if items[i].isActive {
+			retVal = items[i].inputs
+		}
+	}
+	return retVal
+}
+
+func resetActive(items []Track) {
+	for i := 0; i < len(items); i++ {
+		if !items[i].isActive {
+			items[i].isActive = true
+		}
+	}
+}
+
+func join(nums []int) int64 {
+	var str string
+	for i := range nums {
+		str += strconv.Itoa(nums[i])
+	}
+	val, _ := strconv.ParseInt(str, 2, 64)
+
+	return val
 }
